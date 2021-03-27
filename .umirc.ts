@@ -2,7 +2,7 @@ import { defineConfig } from 'umi';
 import theme from './src/theme';
 
 export default defineConfig({
-  title: '单词卡',
+  title: '待办清单',
   qiankun: {
     slave: {},
   },
@@ -16,23 +16,23 @@ export default defineConfig({
       path: '/',
       component: '@/layouts/',
       routes: [
-        { path: '/', redirect: '/record/' },
-        { path: '/record/', component: 'record' },
-        { path: '/review/', component: 'review' },
+        { path: '/', redirect: '/task/' },
+        { path: '/task/', component: 'task' },
+        { path: '/history/', component: 'history' },
         // { redirect: '/record/' },
       ],
     },
   ],
 
   hash: true,
-  base: '/flashcard',
-  publicPath: '/flashcard/',
+  base: '/to-do-list',
+  publicPath: '/to-do-list/',
   runtimePublicPath: true,
   extraBabelPlugins: [
     [
       'babel-plugin-styled-components',
       {
-        namespace: 'flashcard',
+        namespace: 'to-do-list',
       },
     ],
   ],
