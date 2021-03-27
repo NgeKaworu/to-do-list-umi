@@ -43,12 +43,11 @@ const MenuItem = styled.div<MenuItemProps>`
 
 const menu = [
   {
-    title: '新词本',
-    path: '/record/',
+    title: '待办',
+    path: '/task/',
     icon: <FormOutlined />,
-    query: { type: 'enable' },
   },
-  { title: '复习', path: '/review/', icon: <SyncOutlined /> },
+  { title: '历史', path: '/history/', icon: <SyncOutlined /> },
 ];
 
 export default (props: PropsWithChildren<any>) => {
@@ -56,12 +55,10 @@ export default (props: PropsWithChildren<any>) => {
   const history = useHistory();
 
   function onMenuClick(e: React.MouseEvent<HTMLDivElement, MouseEvent>) {
-    const path: string = e?.currentTarget?.dataset?.path as string,
-      query = menu.find((m) => m?.path === path)?.query;
+    const path: string = e?.currentTarget?.dataset?.path as string;
 
     history.push({
       pathname: path,
-      search: new URLSearchParams(query)?.toString(),
     });
   }
   return (

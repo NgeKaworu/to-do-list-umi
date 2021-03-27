@@ -4,7 +4,7 @@ import { Divider, Popconfirm, Button } from 'antd';
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 
 import theme from '@/theme';
-import { Record } from '@/models/record';
+import { MainTask } from '@/models/task';
 import styled from 'styled-components';
 
 export interface RecordItemProps {

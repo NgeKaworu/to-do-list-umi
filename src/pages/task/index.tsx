@@ -10,12 +10,12 @@ import {
   Layout,
   Button,
   Menu,
-  Space,
   Modal,
   Form,
   Radio,
   Card,
   Skeleton,
+  Select,
 } from 'antd';
 
 const { Header, Content, Footer } = Layout;
@@ -29,7 +29,7 @@ import { mainHost } from '@/http/host';
 
 import RecordItem from './components/RecordItem';
 
-import { Record } from '@/models/record';
+import { MainTask } from '@/models/task';
 
 import styles from '@/index.less';
 
@@ -37,6 +37,11 @@ type inputType = '' | '新建' | '编辑';
 type OnItemsRendered = (props: ListOnItemsRenderedProps) => any;
 
 const limit = 10;
+const FormItem = Form.Item;
+const InputGroup = Input.Group;
+const Option = Select.Option;
+
+const Flex1 = { flex: 1 };
 
 export default () => {
   const [sortForm] = Form.useForm();
@@ -255,15 +260,11 @@ export default () => {
     deleter.mutate(id);
   }
 
-  function onItemEditClick(record: Record) {
+  function onItemEditClick(record: MainTask) {
     inputForm.setFieldsValue(record);
     setCurRecord(record);
     setInputType('编辑');
     setInputVisable(true);
-  }
-
-  function cancelAllSelect() {
-    setSelectedItems([]);
   }
 
   // react-window-infinite
@@ -279,7 +280,7 @@ export default () => {
   // const isItemLoaded = index => !hasNextPage || index < pages.length;
   const isItemLoaded = (index: number) => !hasNextPage || index < pages?.length;
 
-  const getItemKey = (index: number, data: Record[]) =>
+  const getItemKey = (index: number, data: MainTask[]) =>
     data?.[index]?._id || index;
 
   // Render an item or a loading indicator.
@@ -363,7 +364,7 @@ export default () => {
           onOk={onSortSubmit}
         >
           <Form onFinish={onSortSubmit} form={sortForm}>
-            <Form.Item
+            <FormItem
               name="sort"
               label="排序关键字"
               rules={[{ required: true }]}
@@ -373,8 +374,8 @@ export default () => {
                 <Radio.Button value="createAt">添加时间</Radio.Button>
                 <Radio.Button value="exp">熟练度</Radio.Button>
               </Radio.Group>
-            </Form.Item>
-            <Form.Item
+            </FormItem>
+            <FormItem
               name="orderby"
               label="排序方向"
               rules={[{ required: true }]}
@@ -383,17 +384,17 @@ export default () => {
                 <Radio.Button value="1">升序</Radio.Button>
                 <Radio.Button value="-1">降序</Radio.Button>
               </Radio.Group>
-            </Form.Item>
-            <Form.Item>
+            </FormItem>
+            <FormItem>
               <Button style={{ opacity: 0 }} htmlType="submit">
                 提交
               </Button>
-            </Form.Item>
-            <Form.Item>
+            </FormItem>
+            <FormItem>
               <Button type="dashed" danger onClick={onSortCancel}>
                 取消排序
               </Button>
-            </Form.Item>
+            </FormItem>
           </Form>
         </Modal>
       </Header>
@@ -413,36 +414,38 @@ export default () => {
         </div>
       </Content>
       <Footer className={styles['footer']}>
-        <Space style={{ marginRight: '12px' }}>
-          {selectedItems.length}/{total}
-          <Button type="dashed" onClick={cancelAllSelect}>
-            取消选择
-          </Button>
-          {/* <Button danger>删除所选</Button> */}
-        </Space>
-        <Space>
-          <Button
-            type="primary"
-            disabled={!selectedItems.length}
-            onClick={reviewHandler}
-          >
-            复习所选
-          </Button>
-          <Button type="primary" onClick={randomReviewHandler}>
-            随机复习
-          </Button>
-          <Button type="primary" onClick={reviewAllHandler}>
-            复习全部
-          </Button>
-          <Button
-            type="primary"
-            shape="circle"
-            icon={<PlusOutlined />}
-            onClick={showInpurModal}
-            data-input-type="新建"
-          />
-        </Space>
+        <Form layout="inline" initialValues={{ level: 0 }} style={Flex1}>
+          <FormItem style={Flex1}>
+            <InputGroup compact style={{ ...Flex1, display: 'flex' }}>
+              <FormItem name="level" rules={[{ required: true }]}>
+                <Select placeholder="优先级">
+                  <Option value={0}>
+                    <span style={{ color: 'green' }}>低</span>
+                  </Option>
+                  <Option value={1}>
+                    <span style={{ color: 'blue' }}>中</span>
+                  </Option>
+                  <Option value={2}>
+                    <span style={{ color: 'red' }}>高</span>
+                  </Option>
+                </Select>
+              </FormItem>
+              <FormItem name="title" rules={[{ required: true }]} style={Flex1}>
+                <Input placeholder="添加任务" style={Flex1} />
+              </FormItem>
+            </InputGroup>
+          </FormItem>
+          <FormItem>
+            <Button
+              type="primary"
+              shape="circle"
+              icon={<PlusOutlined />}
+              htmlType="submit"
+            />
+          </FormItem>
+        </Form>
       </Footer>
+
       <Modal
         title={inputType}
         visible={inputVisable}
@@ -450,21 +453,21 @@ export default () => {
         onOk={onInputSubmit}
       >
         <Form form={inputForm} onFinish={onInputSubmit}>
-          <Form.Item name="source" label="原文" rules={[{ required: true }]}>
+          <FormItem name="source" label="原文" rules={[{ required: true }]}>
             <Input.TextArea autoSize allowClear />
-          </Form.Item>
-          <Form.Item
+          </FormItem>
+          <FormItem
             name="translation"
             label="译文"
             rules={[{ required: true }]}
           >
             <Input.TextArea autoSize allowClear />
-          </Form.Item>
-          <Form.Item>
+          </FormItem>
+          <FormItem>
             <Button style={{ opacity: 0 }} htmlType="submit">
               提交
             </Button>
-          </Form.Item>
+          </FormItem>
         </Form>
       </Modal>
     </Layout>
