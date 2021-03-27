@@ -82,7 +82,7 @@ export default () => {
       const params: { [key: string]: string | number } = Object.fromEntries(
         new URLSearchParams(_search),
       );
-
+      return Promise.resolve([]);
       return RESTful.get(`${mainHost()}/record/list`, {
         silence: 'success',
         params: {
@@ -343,18 +343,13 @@ export default () => {
   return (
     <Layout style={{ height: '100%' }}>
       <Header className={styles['header']}>
-        <Menu
-          mode="horizontal"
-          style={{ margin: '0 auto' }}
-          onSelect={onMenuSelect}
-          selectedKeys={selectedKeys}
+        所有任务
+        <Button
+          type="link"
+          size="small"
+          onClick={showSortModal}
+          style={{ position: 'absolute', right: 0 }}
         >
-          <Menu.Item key="enable">可复习</Menu.Item>
-          <Menu.Item key="cooling">冷却中</Menu.Item>
-          <Menu.Item key="done">己完成</Menu.Item>
-          <Menu.Item key="all">全部</Menu.Item>
-        </Menu>
-        <Button type="link" size="small" onClick={showSortModal}>
           排序
         </Button>
         <Modal
@@ -415,34 +410,36 @@ export default () => {
       </Content>
       <Footer className={styles['footer']}>
         <Form layout="inline" initialValues={{ level: 0 }} style={Flex1}>
-          <FormItem style={Flex1}>
-            <InputGroup compact style={{ ...Flex1, display: 'flex' }}>
-              <FormItem name="level" rules={[{ required: true }]}>
-                <Select placeholder="优先级">
-                  <Option value={0}>
-                    <span style={{ color: 'green' }}>低</span>
-                  </Option>
-                  <Option value={1}>
-                    <span style={{ color: 'blue' }}>中</span>
-                  </Option>
-                  <Option value={2}>
-                    <span style={{ color: 'red' }}>高</span>
-                  </Option>
-                </Select>
-              </FormItem>
-              <FormItem name="title" rules={[{ required: true }]} style={Flex1}>
-                <Input placeholder="添加任务" style={Flex1} />
-              </FormItem>
-            </InputGroup>
-          </FormItem>
-          <FormItem>
-            <Button
-              type="primary"
-              shape="circle"
-              icon={<PlusOutlined />}
-              htmlType="submit"
-            />
-          </FormItem>
+          <InputGroup compact style={{ ...Flex1, display: 'flex' }}>
+            <FormItem
+              name="level"
+              rules={[{ required: true, message: '请选择优先级' }]}
+            >
+              <Select placeholder="优先级">
+                <Option value={0}>
+                  <span style={{ color: 'green' }}>低</span>
+                </Option>
+                <Option value={1}>
+                  <span style={{ color: 'blue' }}>中</span>
+                </Option>
+                <Option value={2}>
+                  <span style={{ color: 'red' }}>高</span>
+                </Option>
+              </Select>
+            </FormItem>
+            <FormItem
+              name="title"
+              rules={[{ required: true, message: '请输入任务名' }]}
+              style={Flex1}
+            >
+              <Input placeholder="添加任务" style={Flex1} />
+            </FormItem>
+            <FormItem style={{ marginRight: 0 }}>
+              <Button type="primary" htmlType="submit">
+                新增
+              </Button>
+            </FormItem>
+          </InputGroup>
         </Form>
       </Footer>
 
