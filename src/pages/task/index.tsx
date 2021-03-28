@@ -29,9 +29,13 @@ import { mainHost } from '@/http/host';
 
 import RecordItem from './components/RecordItem';
 
-import { MainTask } from '@/models/task';
+import { MainTask, Task } from '@/models/task';
+
+import usePollQueue from './hooks/usePollQueue';
 
 import styles from '@/index.less';
+
+const PollQueueProvider = usePollQueue.Provider;
 
 type inputType = '' | '新建' | '编辑';
 type OnItemsRendered = (props: ListOnItemsRenderedProps) => any;
@@ -39,9 +43,14 @@ type OnItemsRendered = (props: ListOnItemsRenderedProps) => any;
 const limit = 10;
 const FormItem = Form.Item;
 const InputGroup = Input.Group;
-const Option = Select.Option;
 
 const Flex1 = { flex: 1 };
+
+export const levelOptions = [
+  { value: 0, label: <span style={{ color: 'green' }}>低</span> },
+  { value: 1, label: <span style={{ color: 'blue' }}>中</span> },
+  { value: 2, label: <span style={{ color: 'red' }}>高</span> },
+];
 
 export default () => {
   const [sortForm] = Form.useForm();
@@ -50,7 +59,6 @@ export default () => {
   const _location = history.location;
   const _search = _location.search;
   const params = new URLSearchParams(_search);
-  const selectedKeys = [params.get('type') || 'all'];
 
   const [sortVisable, setSortVisable] = useState(false);
   const [inputVisable, setInputVisable] = useState(false);
@@ -61,11 +69,12 @@ export default () => {
   const [contentRect, setContentRec] = useState<DOMRect>();
 
   // 编辑modal使用
-  const [curRecrod, setCurRecord] = useState<Record>();
+  const [curRecrod, setCurRecord] = useState<MainTask>();
 
   useLayoutEffect(() => {
     const current = contentRef.current;
     const obj = current?.getBoundingClientRect();
+
     obj && setContentRec(obj);
   }, [contentRef]);
 
@@ -77,13 +86,13 @@ export default () => {
   const queryClient = useQueryClient();
 
   const { data, fetchNextPage, hasNextPage, isFetching } = useInfiniteQuery(
-    ['records-list', _search],
+    ['tasks-list', _search],
     ({ pageParam = 0 }) => {
       const params: { [key: string]: string | number } = Object.fromEntries(
         new URLSearchParams(_search),
       );
-      return Promise.resolve([]);
-      return RESTful.get(`${mainHost()}/record/list`, {
+
+      return RESTful.get(`${mainHost()}/v1/task/list`, {
         silence: 'success',
         params: {
           ...params,
@@ -104,10 +113,10 @@ export default () => {
     total = datas?.[datas?.length - 1]?.total || 0;
 
   const creator = useMutation(
-    (data) => RESTful.post(`${mainHost()}/record/create`, { data }),
+    (data: Task) => RESTful.post(`${mainHost()}/v1/task/create`, { data }),
     {
       onSuccess() {
-        queryClient.invalidateQueries('records-list');
+        queryClient.invalidateQueries('tasks-list');
         inputForm.resetFields();
         setInputVisable(false);
       },
@@ -116,7 +125,7 @@ export default () => {
 
   const updater = useMutation(
     (data?: { [key: string]: any }) =>
-      RESTful.patch(`${mainHost()}/record/update`, {
+      RESTful.patch(`${mainHost()}/v1/record/update`, {
         data: { id: curRecrod?._id, ...data },
       }),
     {
@@ -170,6 +179,10 @@ export default () => {
       },
     },
   );
+
+  function addTask(value: Task) {
+    creator.mutate(value);
+  }
 
   function reviewHandler() {
     reviewer.mutate(selectedItems);
@@ -292,7 +305,6 @@ export default () => {
     style: React.CSSProperties;
   }) {
     const record = pages[index];
-    const selected = selectedItems.some((s) => s === record?._id);
 
     let content = (
       <Card style={{ margin: '12px' }}>
@@ -304,7 +316,6 @@ export default () => {
         <RecordItem
           key={record._id}
           record={record}
-          selected={selected}
           onClick={onItemClick}
           onEditClick={onItemEditClick}
           onRemoveClick={onItemRemoveClick}
@@ -341,132 +352,129 @@ export default () => {
   }
 
   return (
-    <Layout style={{ height: '100%' }}>
-      <Header className={styles['header']}>
-        所有任务
-        <Button
-          type="link"
-          size="small"
-          onClick={showSortModal}
-          style={{ position: 'absolute', right: 0 }}
-        >
-          排序
-        </Button>
+    <PollQueueProvider>
+      <Layout style={{ height: '100%' }}>
+        <Header className={styles['header']}>
+          所有任务
+          <Button
+            type="link"
+            size="small"
+            onClick={showSortModal}
+            style={{ position: 'absolute', right: 0 }}
+          >
+            排序
+          </Button>
+          <Modal
+            visible={sortVisable}
+            title="排序"
+            onCancel={hideSortModal}
+            onOk={onSortSubmit}
+          >
+            <Form onFinish={onSortSubmit} form={sortForm}>
+              <FormItem
+                name="sort"
+                label="排序关键字"
+                rules={[{ required: true }]}
+              >
+                <Radio.Group>
+                  <Radio.Button value="reviewAt">复习时间</Radio.Button>
+                  <Radio.Button value="createAt">添加时间</Radio.Button>
+                  <Radio.Button value="exp">熟练度</Radio.Button>
+                </Radio.Group>
+              </FormItem>
+              <FormItem
+                name="orderby"
+                label="排序方向"
+                rules={[{ required: true }]}
+              >
+                <Radio.Group>
+                  <Radio.Button value="1">升序</Radio.Button>
+                  <Radio.Button value="-1">降序</Radio.Button>
+                </Radio.Group>
+              </FormItem>
+              <FormItem>
+                <Button style={{ opacity: 0 }} htmlType="submit">
+                  提交
+                </Button>
+              </FormItem>
+              <FormItem>
+                <Button type="dashed" danger onClick={onSortCancel}>
+                  取消排序
+                </Button>
+              </FormItem>
+            </Form>
+          </Modal>
+        </Header>
+        <Content style={{ height: '100%' }}>
+          <div style={{ width: '100%', height: '100%' }} ref={contentRef}>
+            {pages?.length ? (
+              <InfiniteLoader
+                isItemLoaded={isItemLoaded}
+                itemCount={total}
+                loadMoreItems={loadMoreItems}
+              >
+                {renderList}
+              </InfiniteLoader>
+            ) : (
+              <Empty className={styles['empty']} />
+            )}
+          </div>
+        </Content>
+        <Footer className={styles['footer']}>
+          <Form
+            layout="inline"
+            initialValues={{ level: 0 }}
+            style={Flex1}
+            onFinish={addTask}
+          >
+            <InputGroup compact style={{ ...Flex1, display: 'flex' }}>
+              <FormItem
+                name="level"
+                rules={[{ required: true, message: '请选择优先级' }]}
+              >
+                <Select placeholder="优先级" options={levelOptions}></Select>
+              </FormItem>
+              <FormItem
+                name="title"
+                rules={[{ required: true, message: '请输入任务名' }]}
+                style={Flex1}
+              >
+                <Input placeholder="添加任务" style={Flex1} />
+              </FormItem>
+              <FormItem style={{ marginRight: 0 }}>
+                <Button type="primary" htmlType="submit">
+                  新增
+                </Button>
+              </FormItem>
+            </InputGroup>
+          </Form>
+        </Footer>
+
         <Modal
-          visible={sortVisable}
-          title="排序"
-          onCancel={hideSortModal}
-          onOk={onSortSubmit}
+          title={inputType}
+          visible={inputVisable}
+          onCancel={hideInputModal}
+          onOk={onInputSubmit}
         >
-          <Form onFinish={onSortSubmit} form={sortForm}>
-            <FormItem
-              name="sort"
-              label="排序关键字"
-              rules={[{ required: true }]}
-            >
-              <Radio.Group>
-                <Radio.Button value="reviewAt">复习时间</Radio.Button>
-                <Radio.Button value="createAt">添加时间</Radio.Button>
-                <Radio.Button value="exp">熟练度</Radio.Button>
-              </Radio.Group>
+          <Form form={inputForm} onFinish={onInputSubmit}>
+            <FormItem name="source" label="原文" rules={[{ required: true }]}>
+              <Input.TextArea autoSize allowClear />
             </FormItem>
             <FormItem
-              name="orderby"
-              label="排序方向"
+              name="translation"
+              label="译文"
               rules={[{ required: true }]}
             >
-              <Radio.Group>
-                <Radio.Button value="1">升序</Radio.Button>
-                <Radio.Button value="-1">降序</Radio.Button>
-              </Radio.Group>
+              <Input.TextArea autoSize allowClear />
             </FormItem>
             <FormItem>
               <Button style={{ opacity: 0 }} htmlType="submit">
                 提交
               </Button>
             </FormItem>
-            <FormItem>
-              <Button type="dashed" danger onClick={onSortCancel}>
-                取消排序
-              </Button>
-            </FormItem>
           </Form>
         </Modal>
-      </Header>
-      <Content style={{ height: '100%' }}>
-        <div style={{ width: '100%', height: '100%' }} ref={contentRef}>
-          {pages?.length ? (
-            <InfiniteLoader
-              isItemLoaded={isItemLoaded}
-              itemCount={total}
-              loadMoreItems={loadMoreItems}
-            >
-              {renderList}
-            </InfiniteLoader>
-          ) : (
-            <Empty className={styles['empty']} />
-          )}
-        </div>
-      </Content>
-      <Footer className={styles['footer']}>
-        <Form layout="inline" initialValues={{ level: 0 }} style={Flex1}>
-          <InputGroup compact style={{ ...Flex1, display: 'flex' }}>
-            <FormItem
-              name="level"
-              rules={[{ required: true, message: '请选择优先级' }]}
-            >
-              <Select placeholder="优先级">
-                <Option value={0}>
-                  <span style={{ color: 'green' }}>低</span>
-                </Option>
-                <Option value={1}>
-                  <span style={{ color: 'blue' }}>中</span>
-                </Option>
-                <Option value={2}>
-                  <span style={{ color: 'red' }}>高</span>
-                </Option>
-              </Select>
-            </FormItem>
-            <FormItem
-              name="title"
-              rules={[{ required: true, message: '请输入任务名' }]}
-              style={Flex1}
-            >
-              <Input placeholder="添加任务" style={Flex1} />
-            </FormItem>
-            <FormItem style={{ marginRight: 0 }}>
-              <Button type="primary" htmlType="submit">
-                新增
-              </Button>
-            </FormItem>
-          </InputGroup>
-        </Form>
-      </Footer>
-
-      <Modal
-        title={inputType}
-        visible={inputVisable}
-        onCancel={hideInputModal}
-        onOk={onInputSubmit}
-      >
-        <Form form={inputForm} onFinish={onInputSubmit}>
-          <FormItem name="source" label="原文" rules={[{ required: true }]}>
-            <Input.TextArea autoSize allowClear />
-          </FormItem>
-          <FormItem
-            name="translation"
-            label="译文"
-            rules={[{ required: true }]}
-          >
-            <Input.TextArea autoSize allowClear />
-          </FormItem>
-          <FormItem>
-            <Button style={{ opacity: 0 }} htmlType="submit">
-              提交
-            </Button>
-          </FormItem>
-        </Form>
-      </Modal>
-    </Layout>
+      </Layout>
+    </PollQueueProvider>
   );
 };
