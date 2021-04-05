@@ -7,8 +7,8 @@ export interface Task {
 export interface MainTask extends Task {
   _id: string;
   id: string;
-  createAt: Date;
+  createAt?: Date;
   updateAt?: Date;
   subTask?: Task[];
-  level: number;
+  level?: number;
 }

@@ -1,21 +1,18 @@
-import React, { createContext, useContext, useState } from 'react';
+import React from 'react';
 
-import { Divider, Popconfirm, Button, Select, Radio, Input } from 'antd';
+import { Popconfirm, Button, Select } from 'antd';
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 
 import { MainTask } from '@/models/task';
 import styled from 'styled-components';
 import { levelOptions } from '..';
 
-import { useContainer } from 'unstated-next';
-import usePollQueue from '../hooks/usePollQueue';
 import DebounceRadio from './DebounceRadio';
 
 export interface RecordItemProps {
-  onClick: (id: string) => void;
   onRemoveClick: (id: string) => void;
   onEditClick: (record: MainTask) => void;
-  onLevelChange: (record: MainTask) => void;
+  onChange: (record: MainTask) => void;
   record: MainTask;
 }
 
@@ -39,15 +36,8 @@ const RecordCard = styled.div`
   }
 `;
 
-export default ({
-  onClick,
-  onRemoveClick,
-  onEditClick,
-  record,
-}: RecordItemProps) => {
+export default ({ onRemoveClick, onEditClick, record }: RecordItemProps) => {
   let { id, subTask, title, createAt, updateAt, level } = record;
-
-  const { setMainTaskQueue, setSubTaskQueue } = useContainer(usePollQueue);
 
   function editClickHandler(e: React.MouseEvent<HTMLDivElement, MouseEvent>) {
     e.stopPropagation();
@@ -78,8 +68,12 @@ export default ({
   }
 
   function subTaskDone(e: React.MouseEvent<HTMLInputElement, MouseEvent>) {
-    const originKey = e?.currentTarget?.dataset?.originKey;
-    console.log('originKey', originKey);
+    const originKey = (e?.target as HTMLInputElement)?.dataset?.originKey;
+    console.log(
+      'originKey',
+      originKey,
+      (e?.target as HTMLInputElement)?.checked,
+    );
   }
   return (
     <RecordCard>
@@ -87,19 +81,18 @@ export default ({
         <h1>{title}</h1>
       </DebounceRadio>
       <div style={{ marginLeft: '16px' }}>
-        {subTask?.map((t) => {
-          return (
-            <div key={t?.originKey}>
-              <DebounceRadio
-                data-origin-key={t?.originKey}
-                onClick={subTaskDone}
-                interval={3000}
-              >
-                {t?.title}
-              </DebounceRadio>
-            </div>
-          );
-        })}
+        {subTask?.map((t) => (
+          <div>
+            <DebounceRadio
+              key={t?.originKey}
+              data-origin-key={t?.originKey}
+              onClick={subTaskDone}
+              interval={3000}
+            >
+              {t?.title}
+            </DebounceRadio>
+          </div>
+        ))}
       </div>
       <div className="tools-bar">
         <Select
