@@ -63,7 +63,6 @@ export default () => {
   const [sortVisable, setSortVisable] = useState(false);
   const [inputVisable, setInputVisable] = useState(false);
   const [inputType, setInputType] = useState<inputType>('新建');
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
   const contentRef = useRef<HTMLDivElement>(null);
   const [contentRect, setContentRec] = useState<DOMRect>();
@@ -112,99 +111,29 @@ export default () => {
     pages = datas?.reduce((acc, cur) => acc.concat(cur?.data), []),
     total = datas?.[datas?.length - 1]?.total || 0;
 
-  const creator = useMutation(
-    (data: Task) => RESTful.post(`${mainHost()}/v1/task/create`, { data }),
-    {
-      onSuccess() {
-        queryClient.invalidateQueries('tasks-list');
-        inputForm.resetFields();
-        setInputVisable(false);
-      },
-    },
+  const creator = useMutation((data: Task) =>
+    RESTful.post(`${mainHost()}/v1/task/create`, { data }),
   );
 
-  const updater = useMutation(
-    (data?: { [key: string]: any }) =>
-      RESTful.patch(`${mainHost()}/v1/record/update`, {
-        data: { id: curRecrod?._id, ...data },
-      }),
-    {
-      onSuccess() {
-        queryClient.invalidateQueries('records-list');
-        inputForm.resetFields();
-        setInputVisable(false);
-      },
-    },
+  const updater = useMutation((data?: { [key: string]: any }) =>
+    RESTful.patch(`${mainHost()}/v1/record/update`, {
+      data: { id: curRecrod?._id, ...data },
+    }),
   );
 
-  const deleter = useMutation(
-    (data?: string) => RESTful.delete(`${mainHost()}/record/remove/${data}`),
-    {
-      onSuccess() {
-        queryClient.invalidateQueries('records-list');
-      },
-    },
+  const deleter = useMutation((data?: string) =>
+    RESTful.delete(`${mainHost()}/record/remove/${data}`),
   );
 
-  const reviewer = useMutation(
-    (ids: string[]) =>
-      RESTful.patch(`${mainHost()}/record/review`, { data: { ids } }),
-    {
-      onSuccess() {
-        queryClient.invalidateQueries('records-list');
-        queryClient.invalidateQueries('review-list');
-        history.push('/review/');
-      },
-    },
-  );
-
-  const randomReviewer = useMutation(
-    (data) => RESTful.patch(`${mainHost()}/record/random-review`, { data }),
-    {
-      onSuccess() {
-        queryClient.invalidateQueries('records-list');
-        queryClient.invalidateQueries('review-list');
-        history.push('/review/');
-      },
-    },
-  );
-
-  const allReviewer = useMutation(
-    (data) => RESTful.get(`${mainHost()}/record/review-all`),
-    {
-      onSuccess() {
-        queryClient.invalidateQueries('records-list');
-        queryClient.invalidateQueries('review-list');
-        history.push('/review/');
-      },
-    },
-  );
-
-  function addTask(value: Task) {
-    creator.mutate(value);
-  }
-
-  function reviewHandler() {
-    reviewer.mutate(selectedItems);
-  }
-  function randomReviewHandler() {
-    randomReviewer.mutate();
-  }
-
-  function reviewAllHandler() {
-    allReviewer.mutate();
-  }
-
-  function onMenuSelect({ key }: SelectInfo) {
-    if (key !== 'all') {
-      params.set('type', `${key}`);
-    } else {
-      params.delete('type');
+  async function addTask(value: Task) {
+    try {
+      await creator.mutateAsync(value);
+      queryClient.invalidateQueries('tasks-list');
+      inputForm.resetFields();
+      setInputVisable(false);
+    } catch (e) {
+      console.error(e);
     }
-    history.push({
-      pathname: _location.pathname,
-      search: params.toString(),
-    });
   }
 
   function showSortModal() {
@@ -238,42 +167,32 @@ export default () => {
     setSortVisable(false);
   }
 
-  function showInpurModal(e: React.MouseEvent<HTMLElement, MouseEvent>) {
-    setInputType(e.currentTarget.dataset.inputType as inputType);
-    setInputVisable(true);
-  }
-
   function hideInputModal() {
     setInputVisable(false);
   }
 
-  function onInputSubmit() {
-    inputForm.validateFields().then((values) => {
-      switch (inputType) {
-        case '新建':
-          creator.mutate(values);
-          break;
-        case '编辑':
-          updater.mutate(values);
-          break;
-        default:
-          console.error('invalidate type:', inputType);
-      }
-    });
+  async function updateHandler() {
+    try {
+      const values = await inputForm.validateFields();
+      await updater.mutateAsync(values);
+      queryClient.invalidateQueries('records-list');
+      inputForm.resetFields();
+      setInputVisable(false);
+    } catch (e) {
+      console.error(e);
+    }
   }
 
-  function onItemClick(id: string) {
-    setSelectedItems((s) => {
-      const checked = s.some((i) => i === id);
-      return checked ? s.filter((i) => i !== id) : s.concat(id);
-    });
+  async function removeHandler(id: string) {
+    try {
+      deleter.mutate(id);
+      queryClient.invalidateQueries('records-list');
+    } catch (e) {
+      console.error(e);
+    }
   }
 
-  function onItemRemoveClick(id: string) {
-    deleter.mutate(id);
-  }
-
-  function onItemEditClick(record: MainTask) {
+  function editHandler(record: MainTask) {
     inputForm.setFieldsValue(record);
     setCurRecord(record);
     setInputType('编辑');
@@ -316,9 +235,8 @@ export default () => {
         <RecordItem
           key={record._id}
           record={record}
-          onClick={onItemClick}
-          onEditClick={onItemEditClick}
-          onRemoveClick={onItemRemoveClick}
+          onEditClick={editHandler}
+          onRemoveClick={removeHandler}
         />
       );
     }
@@ -454,9 +372,9 @@ export default () => {
           title={inputType}
           visible={inputVisable}
           onCancel={hideInputModal}
-          onOk={onInputSubmit}
+          onOk={updateHandler}
         >
-          <Form form={inputForm} onFinish={onInputSubmit}>
+          <Form form={inputForm} onFinish={updateHandler}>
             <FormItem name="source" label="原文" rules={[{ required: true }]}>
               <Input.TextArea autoSize allowClear />
             </FormItem>
