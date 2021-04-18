@@ -318,7 +318,12 @@ export default () => {
         onCancel={hideInputModal}
         onOk={updateHandler}
       >
-        <Form form={inputForm} onFinish={updateHandler}>
+        <Form
+          form={inputForm}
+          onFinish={updateHandler}
+          wrapperCol={{ span: 24 }}
+          labelCol={{ span: 24 }}
+        >
           <FormItem label="主任务" required style={{ marginBottom: 0 }}>
             <Input.Group>
               <Row gutter={8}>
