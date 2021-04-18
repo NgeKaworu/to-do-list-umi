@@ -5,14 +5,14 @@ import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 
 import { MainTask } from '@/models/task';
 import styled from 'styled-components';
-import { levelOptions } from '..';
 
 import DebounceRadio from './DebounceRadio';
+import { LEVEL_OPTIONS } from '@/constants';
 
 export interface RecordItemProps {
   onRemoveClick: (id: string) => void;
   onEditClick: (record: MainTask) => void;
-  onChange: (record: MainTask) => void;
+  onChange: (record: Partial<MainTask>) => void;
   record: MainTask;
 }
 
@@ -36,8 +36,13 @@ const RecordCard = styled.div`
   }
 `;
 
-export default ({ onRemoveClick, onEditClick, record }: RecordItemProps) => {
-  let { id, subTask, title, createAt, updateAt, level } = record;
+export default ({
+  onRemoveClick,
+  onEditClick,
+  onChange,
+  record,
+}: RecordItemProps) => {
+  let { id, subTask, title, level, done } = record;
 
   function editClickHandler(e: React.MouseEvent<HTMLDivElement, MouseEvent>) {
     e.stopPropagation();
@@ -52,42 +57,38 @@ export default ({ onRemoveClick, onEditClick, record }: RecordItemProps) => {
     e?.stopPropagation();
   }
 
-  function levelChangeHandler<T>(value: T) {
-    console.log('value', value);
+  function levelChangeHandler(value: any) {
+    onChange({ id, level: value });
   }
 
-  subTask = [
-    { title: '456', done: false, originKey: 0 },
-    { title: '789', done: true, originKey: 1 },
-    { title: '1111', done: false, originKey: 2 },
-  ];
-
   function mainTaskDone(e: React.MouseEvent<HTMLInputElement, MouseEvent>) {
-    e;
-    console.log('mainTask', id, (e?.target as HTMLInputElement)?.checked);
+    onChange({ id, done: (e?.target as HTMLInputElement)?.checked });
   }
 
   function subTaskDone(e: React.MouseEvent<HTMLInputElement, MouseEvent>) {
     const originKey = (e?.target as HTMLInputElement)?.dataset?.originKey;
-    console.log(
-      'originKey',
-      originKey,
-      (e?.target as HTMLInputElement)?.checked,
-    );
+    onChange({
+      id,
+      [`subTask.${originKey}.done`]: (e?.target as HTMLInputElement)?.checked,
+    });
   }
   return (
     <RecordCard>
-      <DebounceRadio onClick={mainTaskDone} interval={3000}>
+      <DebounceRadio
+        onClick={mainTaskDone}
+        interval={3000}
+        defaultChecked={done}
+      >
         <h1>{title}</h1>
       </DebounceRadio>
       <div style={{ marginLeft: '16px' }}>
-        {subTask?.map((t) => (
-          <div>
+        {subTask?.map((t, idx) => (
+          <div key={idx}>
             <DebounceRadio
-              key={t?.originKey}
-              data-origin-key={t?.originKey}
+              data-origin-key={idx}
               onClick={subTaskDone}
               interval={3000}
+              defaultChecked={t.done}
             >
               {t?.title}
             </DebounceRadio>
@@ -101,7 +102,7 @@ export default ({ onRemoveClick, onEditClick, record }: RecordItemProps) => {
           onClick={stopPropagation}
           onChange={levelChangeHandler}
           value={level}
-          options={levelOptions}
+          options={LEVEL_OPTIONS}
         ></Select>
         <Button
           size="small"

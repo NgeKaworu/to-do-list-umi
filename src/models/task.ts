@@ -1,7 +1,6 @@
 export interface Task {
   title: string;
   done: boolean;
-  originKey: number;
 }
 
 export interface MainTask extends Task {

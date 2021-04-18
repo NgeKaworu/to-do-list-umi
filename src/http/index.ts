@@ -81,6 +81,7 @@ function request(url: string, options: BizOptions = {}) {
       return reAuth
         ? reAuthorization()
         : message.warning({
+            key: 'reauthor',
             content: '请先登录',
             onClose: () => {
               localStorage.clear();

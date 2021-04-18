@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Radio, RadioProps } from 'antd';
+import { useEffect } from 'react';
 
 export default function (
   props: JSX.IntrinsicAttributes &
@@ -7,6 +8,10 @@ export default function (
     React.RefAttributes<HTMLInputElement> & { interval?: number },
 ) {
   const [checked, setChecked] = useState(props?.defaultChecked);
+
+  useEffect(() => {
+    setChecked(props.defaultChecked);
+  }, [props.defaultChecked]);
   const timer = useRef<number>();
 
   function onClick(e: React.MouseEvent<HTMLInputElement, MouseEvent>) {

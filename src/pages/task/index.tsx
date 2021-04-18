@@ -2,30 +2,38 @@ import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router';
 import { useInfiniteQuery, useQueryClient, useMutation } from 'react-query';
 
-import { Input, Layout, Button, Modal, Form, Radio, Select } from 'antd';
+import {
+  Input,
+  Layout,
+  Button,
+  Modal,
+  Form,
+  Radio,
+  Select,
+  Row,
+  Col,
+  Checkbox,
+  Space,
+} from 'antd';
 
 const { Header, Content, Footer } = Layout;
 
 import { RESTful } from '@/http';
 import { mainHost } from '@/http/host';
 
-import RecordItem from './components/RecordItem';
+import RecordItem from '@/components/RecordItem';
 
 import { MainTask, Task } from '@/models/task';
 
 import styles from '@/index.less';
+import Importer from '@/components/Importer';
+import { LEVEL_OPTIONS } from '@/constants';
 
-const limit = 10;
+const limit = 0;
 const FormItem = Form.Item;
 const InputGroup = Input.Group;
 
 const Flex1 = { flex: 1 };
-
-export const levelOptions = [
-  { value: 0, label: <span style={{ color: 'green' }}>低</span> },
-  { value: 1, label: <span style={{ color: 'blue' }}>中</span> },
-  { value: 2, label: <span style={{ color: 'red' }}>高</span> },
-];
 
 export default () => {
   const [sortForm] = Form.useForm();
@@ -48,7 +56,7 @@ export default () => {
 
   const queryClient = useQueryClient();
 
-  const { data, fetchNextPage, hasNextPage, isFetching } = useInfiniteQuery(
+  const { data, isFetching } = useInfiniteQuery(
     ['tasks-list', _search],
     ({ pageParam = 0 }) => {
       const params: { [key: string]: string | number } = Object.fromEntries(
@@ -80,18 +88,18 @@ export default () => {
   );
 
   const updater = useMutation((data?: { [key: string]: any }) =>
-    RESTful.patch(`${mainHost()}/v1/record/update`, {
-      data: { id: curRecrod?._id, ...data },
+    RESTful.patch(`${mainHost()}/v1/task/update`, {
+      data: { id: curRecrod?.id, ...data },
     }),
   );
 
   const deleter = useMutation((data?: string) =>
-    RESTful.delete(`${mainHost()}/record/remove/${data}`),
+    RESTful.delete(`${mainHost()}/v1/task/${data}`),
   );
 
   async function addTask(value: Task) {
     try {
-      await creator.mutateAsync(value);
+      await creator.mutateAsync({ ...value, done: false });
       queryClient.invalidateQueries('tasks-list');
       inputForm.resetFields();
       setInputVisable(false);
@@ -133,13 +141,14 @@ export default () => {
 
   function hideInputModal() {
     setInputVisable(false);
+    inputForm.resetFields();
   }
 
   async function updateHandler() {
     try {
       const values = await inputForm.validateFields();
       await updater.mutateAsync(values);
-      queryClient.invalidateQueries('records-list');
+      queryClient.invalidateQueries('tasks-list');
       inputForm.resetFields();
       setInputVisable(false);
     } catch (e) {
@@ -149,17 +158,17 @@ export default () => {
 
   async function removeHandler(id: string) {
     try {
-      deleter.mutate(id);
-      queryClient.invalidateQueries('records-list');
+      await deleter.mutateAsync(id);
+      queryClient.invalidateQueries('tasks-list');
     } catch (e) {
       console.error(e);
     }
   }
 
-  async function ItemChangeHandler(values: any) {
+  async function itemChangeHandler(values: any) {
     try {
       await updater.mutateAsync(values);
-      queryClient.invalidateQueries('records-list');
+      queryClient.invalidateQueries('tasks-list');
     } catch (e) {
       console.error(e);
     }
@@ -171,18 +180,35 @@ export default () => {
     setInputVisable(true);
   }
 
+  function multipleAdd(value: string) {
+    const pre: Task[] = inputForm.getFieldValue('subTask') || [];
+    const list = value.split(/\s/).reduce(
+      (acc: Task[], cur: string) =>
+        cur !== ''
+          ? acc.concat({
+              title: cur,
+              done: false,
+            })
+          : acc,
+      [],
+    );
+    inputForm.setFieldsValue({
+      subTask: pre?.concat(list),
+    });
+  }
+
   return (
     <Layout style={{ height: '100%' }}>
       <Header className={styles['header']}>
         所有任务
-        <Button
+        {/* <Button
           type="link"
           size="small"
           onClick={showSortModal}
           style={{ position: 'absolute', right: 0 }}
         >
           排序
-        </Button>
+        </Button> */}
         <Modal
           visible={sortVisable}
           title="排序"
@@ -231,7 +257,7 @@ export default () => {
             record={record}
             onEditClick={editHandler}
             onRemoveClick={removeHandler}
-            onChange={ItemChangeHandler}
+            onChange={itemChangeHandler}
           />
         ))}
       </Content>
@@ -247,7 +273,7 @@ export default () => {
               name="level"
               rules={[{ required: true, message: '请选择优先级' }]}
             >
-              <Select placeholder="优先级" options={levelOptions}></Select>
+              <Select placeholder="优先级" options={LEVEL_OPTIONS}></Select>
             </FormItem>
             <FormItem
               name="title"
@@ -257,7 +283,7 @@ export default () => {
               <Input placeholder="添加任务" style={Flex1} />
             </FormItem>
             <FormItem style={{ marginRight: 0 }}>
-              <Button type="primary" htmlType="submit">
+              <Button type="primary" htmlType="submit" loading={isFetching}>
                 新增
               </Button>
             </FormItem>
@@ -272,16 +298,103 @@ export default () => {
         onOk={updateHandler}
       >
         <Form form={inputForm} onFinish={updateHandler}>
-          <FormItem name="source" label="原文" rules={[{ required: true }]}>
-            <Input.TextArea autoSize allowClear />
+          <FormItem label="主任务" required style={{ marginBottom: 0 }}>
+            <Input.Group>
+              <Row gutter={8}>
+                <Col span={22}>
+                  <FormItem
+                    name="title"
+                    rules={[{ required: true, message: '任务名不能为空' }]}
+                  >
+                    <Input />
+                  </FormItem>
+                </Col>
+                <Col
+                  span={2}
+                  style={{ display: 'flex', justifyContent: 'center' }}
+                >
+                  <FormItem name="done" valuePropName="checked">
+                    <Checkbox />
+                  </FormItem>
+                </Col>
+              </Row>
+            </Input.Group>
           </FormItem>
-          <FormItem
-            name="translation"
-            label="译文"
-            rules={[{ required: true }]}
-          >
-            <Input.TextArea autoSize allowClear />
-          </FormItem>
+          <Form.List name="subTask">
+            {(fields, { add, remove }) => {
+              function onAdd() {
+                add();
+              }
+
+              return (
+                <>
+                  <FormItem
+                    label={
+                      <Space size="large">
+                        子任务
+                        <a onClick={onAdd}>添加一项</a>
+                        <Importer
+                          onOk={multipleAdd}
+                          tips="输入空格或换行分割子任务"
+                        >
+                          <a>批量添加</a>
+                        </Importer>
+                      </Space>
+                    }
+                    required
+                  >
+                    {fields.map((field) => {
+                      function onRemove() {
+                        remove(field.name);
+                      }
+                      return (
+                        <FormItem style={{ marginBottom: 0 }} key={field.key}>
+                          <Input.Group>
+                            <Row gutter={8}>
+                              <Col span={20}>
+                                <FormItem
+                                  name={[field.name, 'title']}
+                                  fieldKey={[field.fieldKey, 'title']}
+                                  rules={[
+                                    {
+                                      required: true,
+                                      message: '子任务名不能为空',
+                                    },
+                                  ]}
+                                >
+                                  <Input />
+                                </FormItem>
+                              </Col>
+                              <Col
+                                span={2}
+                                style={{
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                }}
+                              >
+                                <FormItem
+                                  name={[field.name, 'done']}
+                                  fieldKey={[field.fieldKey, 'done']}
+                                  valuePropName="checked"
+                                >
+                                  <Checkbox />
+                                </FormItem>
+                              </Col>
+                              <Col span={2}>
+                                <FormItem>
+                                  <a onClick={onRemove}>删除</a>
+                                </FormItem>
+                              </Col>
+                            </Row>
+                          </Input.Group>
+                        </FormItem>
+                      );
+                    })}
+                  </FormItem>
+                </>
+              );
+            }}
+          </Form.List>
           <FormItem>
             <Button style={{ opacity: 0 }} htmlType="submit">
               提交
