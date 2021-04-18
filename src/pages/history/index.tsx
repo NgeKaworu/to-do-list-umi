@@ -9,7 +9,7 @@ import {
   Modal,
   Form,
   Radio,
-  Select,
+  Empty,
   Row,
   Col,
   Checkbox,
@@ -29,7 +29,7 @@ import styles from '@/index.less';
 import Importer from '@/components/Importer';
 import { LEVEL_OPTIONS } from '@/constants';
 
-const limit = 0;
+const limit = 10;
 const FormItem = Form.Item;
 const InputGroup = Input.Group;
 
@@ -56,7 +56,7 @@ export default () => {
 
   const queryClient = useQueryClient();
 
-  const { data, isFetching } = useInfiniteQuery(
+  const { data, isFetching, fetchNextPage, hasNextPage } = useInfiniteQuery(
     ['tasks-list', _search],
     ({ pageParam = 0 }) => {
       const params: { [key: string]: string | number } = Object.fromEntries(
@@ -97,6 +97,10 @@ export default () => {
   const deleter = useMutation((data?: string) =>
     RESTful.delete(`${mainHost()}/v1/task/${data}`),
   );
+
+  function showMore() {
+    fetchNextPage();
+  }
 
   async function addTask(value: Task) {
     try {
@@ -251,16 +255,31 @@ export default () => {
           </Form>
         </Modal>
       </Header>
-      <Content style={{ height: '100%' }}>
-        {pages?.map((record: MainTask) => (
-          <RecordItem
-            key={record._id}
-            record={record}
-            onEditClick={editHandler}
-            onRemoveClick={removeHandler}
-            onChange={itemChangeHandler}
-          />
-        ))}
+      <Content style={{ height: '100%', overflowY: 'scroll' }}>
+        {pages?.length ? (
+          <>
+            {pages?.map((record: MainTask) => (
+              <RecordItem
+                key={record._id}
+                record={record}
+                onEditClick={editHandler}
+                onRemoveClick={removeHandler}
+                onChange={itemChangeHandler}
+              />
+            ))}
+            <Button
+              type="link"
+              loading={isFetching}
+              onClick={showMore}
+              disabled={!hasNextPage}
+              block
+            >
+              {!hasNextPage ? '没有更多了' : '加载更多'}
+            </Button>
+          </>
+        ) : (
+          <Empty className={styles['empty']} />
+        )}
       </Content>
       <Footer className={styles['footer']}>
         <Form

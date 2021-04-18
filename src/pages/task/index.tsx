@@ -14,6 +14,7 @@ import {
   Col,
   Checkbox,
   Space,
+  Empty,
 } from 'antd';
 
 const { Header, Content, Footer } = Layout;
@@ -200,7 +201,7 @@ export default () => {
   return (
     <Layout style={{ height: '100%' }}>
       <Header className={styles['header']}>
-        所有任务
+        所有待办
         {/* <Button
           type="link"
           size="small"
@@ -250,16 +251,20 @@ export default () => {
           </Form>
         </Modal>
       </Header>
-      <Content style={{ height: '100%' }}>
-        {pages?.map((record: MainTask) => (
-          <RecordItem
-            key={record._id}
-            record={record}
-            onEditClick={editHandler}
-            onRemoveClick={removeHandler}
-            onChange={itemChangeHandler}
-          />
-        ))}
+      <Content style={{ height: '100%', overflowY: 'scroll' }}>
+        {pages?.length ? (
+          pages?.map((record: MainTask) => (
+            <RecordItem
+              key={record._id}
+              record={record}
+              onEditClick={editHandler}
+              onRemoveClick={removeHandler}
+              onChange={itemChangeHandler}
+            />
+          ))
+        ) : (
+          <Empty className={styles['empty']} />
+        )}
       </Content>
       <Footer className={styles['footer']}>
         <Form
