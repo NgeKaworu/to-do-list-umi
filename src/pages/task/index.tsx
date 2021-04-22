@@ -183,7 +183,7 @@ export default () => {
 
   function multipleAdd(value: string) {
     const pre: Task[] = inputForm.getFieldValue('subTask') || [];
-    const list = value.split(/\s/).reduce(
+    const list = value.split(/\n/).reduce(
       (acc: Task[], cur: string) =>
         cur !== ''
           ? acc.concat({
