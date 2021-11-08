@@ -1,16 +1,9 @@
 import { defineConfig } from 'umi';
-import theme from './src/theme';
+import base from './.umirc.default';
 
 export default defineConfig({
+  ...base,
   title: '待办清单',
-  qiankun: {
-    slave: {},
-  },
-  fastRefresh: {},
-  nodeModulesTransform: {
-    type: 'none',
-  },
-  theme,
   routes: [
     {
       path: '/',
@@ -23,21 +16,26 @@ export default defineConfig({
       ],
     },
   ],
-
-  hash: true,
-  base: '/to-do-list',
-  publicPath: '/to-do-list/',
-  runtimePublicPath: true,
+  devServer: {
+    port: 80,
+    proxy: {
+      '/api/todo-list': {
+        target: 'http://todo-list-go-dev',
+        changeOrigin: true,
+        pathRewrite: {
+          '/api/todo-list': '',
+        },
+      },
+    },
+  },
+  base: '/micro/todo-list',
+  publicPath: '/micro/todo-list/',
   extraBabelPlugins: [
     [
       'babel-plugin-styled-components',
       {
-        namespace: 'to-do-list',
+        namespace: 'todo-list',
       },
     ],
   ],
-  externals: {
-    moment: 'moment',
-  },
-  scripts: ['https://lib.baomitu.com/moment.js/latest/moment.min.js'],
 });

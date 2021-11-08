@@ -1,0 +1,17 @@
+FROM node:lts-alpine
+
+EXPOSE 80
+
+RUN mkdir -p /home/node/app && \
+    apk add --update --no-cache git openssh
+
+WORKDIR /home/node/app
+
+COPY package.json package-lock.json ./
+RUN npm ci --registry=http://registry.npmmirror.com
+
+COPY . .
+
+ENV BRANCH = "master"
+
+CMD ["sh", "-c", "git fetch && git checkout $BRANCH -f && git pull --ff-only && npm ci && node"]

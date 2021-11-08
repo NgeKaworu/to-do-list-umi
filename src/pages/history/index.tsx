@@ -2,24 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router';
 import { useInfiniteQuery, useQueryClient, useMutation } from 'react-query';
 
-import {
-  Input,
-  Layout,
-  Button,
-  Modal,
-  Form,
-  Radio,
-  Empty,
-  Row,
-  Col,
-  Checkbox,
-  Space,
-} from 'antd';
+import { Input, Layout, Button, Modal, Form, Radio, Empty, Row, Col, Checkbox, Space } from 'antd';
 
 const { Header, Content, Footer } = Layout;
 
-import { RESTful } from '@/http';
-import { mainHost } from '@/http/host';
+import { restful as RESTful } from '@/http';
 
 import RecordItem from '@/components/RecordItem';
 
@@ -63,7 +50,7 @@ export default () => {
         new URLSearchParams(_search),
       );
 
-      return RESTful.get(`${mainHost()}/v1/task/list`, {
+      return RESTful.get(`todo-list/v1/task/list`, {
         silence: 'success',
         params: {
           ...params,
@@ -84,19 +71,16 @@ export default () => {
     pages = datas?.reduce((acc, cur) => acc.concat(cur?.data), []),
     total = datas?.[datas?.length - 1]?.total || 0;
 
-  const creator = useMutation((data: Task) =>
-    RESTful.post(`${mainHost()}/v1/task/create`, { data }),
-  );
+  const creator = useMutation((data: Task) => RESTful.post(`todo-list/v1/task/create`, data));
 
   const updater = useMutation((data?: { [key: string]: any }) =>
-    RESTful.patch(`${mainHost()}/v1/task/update`, {
-      data: { id: curRecrod?.id, ...data },
+    RESTful.patch(`todo-list/v1/task/update`, {
+      id: curRecrod?.id,
+      ...data,
     }),
   );
 
-  const deleter = useMutation((data?: string) =>
-    RESTful.delete(`${mainHost()}/v1/task/${data}`),
-  );
+  const deleter = useMutation((data?: string) => RESTful.delete(`todo-list/v1/task/${data}`));
 
   function showMore() {
     fetchNextPage();
@@ -214,29 +198,16 @@ export default () => {
         >
           排序
         </Button> */}
-        <Modal
-          visible={sortVisable}
-          title="排序"
-          onCancel={hideSortModal}
-          onOk={onSortSubmit}
-        >
+        <Modal visible={sortVisable} title="排序" onCancel={hideSortModal} onOk={onSortSubmit}>
           <Form onFinish={onSortSubmit} form={sortForm}>
-            <FormItem
-              name="sort"
-              label="排序关键字"
-              rules={[{ required: true }]}
-            >
+            <FormItem name="sort" label="排序关键字" rules={[{ required: true }]}>
               <Radio.Group>
                 <Radio.Button value="reviewAt">复习时间</Radio.Button>
                 <Radio.Button value="createAt">添加时间</Radio.Button>
                 <Radio.Button value="exp">熟练度</Radio.Button>
               </Radio.Group>
             </FormItem>
-            <FormItem
-              name="orderby"
-              label="排序方向"
-              rules={[{ required: true }]}
-            >
+            <FormItem name="orderby" label="排序方向" rules={[{ required: true }]}>
               <Radio.Group>
                 <Radio.Button value="1">升序</Radio.Button>
                 <Radio.Button value="-1">降序</Radio.Button>
@@ -282,12 +253,7 @@ export default () => {
         )}
       </Content>
       <Footer className={styles['footer']}>
-        <Form
-          layout="inline"
-          initialValues={{ level: 0 }}
-          style={Flex1}
-          onFinish={addTask}
-        >
+        <Form layout="inline" initialValues={{ level: 0 }} style={Flex1} onFinish={addTask}>
           筛选 undo
           {/* <InputGroup compact style={{ ...Flex1, display: 'flex' }}>
             <FormItem
@@ -312,12 +278,7 @@ export default () => {
         </Form>
       </Footer>
 
-      <Modal
-        title={'编辑'}
-        visible={inputVisable}
-        onCancel={hideInputModal}
-        onOk={updateHandler}
-      >
+      <Modal title={'编辑'} visible={inputVisable} onCancel={hideInputModal} onOk={updateHandler}>
         <Form
           form={inputForm}
           onFinish={updateHandler}
@@ -328,17 +289,11 @@ export default () => {
             <Input.Group>
               <Row gutter={8}>
                 <Col span={22}>
-                  <FormItem
-                    name="title"
-                    rules={[{ required: true, message: '任务名不能为空' }]}
-                  >
+                  <FormItem name="title" rules={[{ required: true, message: '任务名不能为空' }]}>
                     <Input />
                   </FormItem>
                 </Col>
-                <Col
-                  span={2}
-                  style={{ display: 'flex', justifyContent: 'center' }}
-                >
+                <Col span={2} style={{ display: 'flex', justifyContent: 'center' }}>
                   <FormItem name="done" valuePropName="checked">
                     <Checkbox />
                   </FormItem>
@@ -359,10 +314,7 @@ export default () => {
                       <Space size="large">
                         子任务
                         <a onClick={onAdd}>添加一项</a>
-                        <Importer
-                          onOk={multipleAdd}
-                          tips="输入空格或换行分割子任务"
-                        >
+                        <Importer onOk={multipleAdd} tips="输入空格或换行分割子任务">
                           <a>批量添加</a>
                         </Importer>
                       </Space>
