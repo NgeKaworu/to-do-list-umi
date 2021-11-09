@@ -5,7 +5,7 @@ RUN mkdir -p /home/node/app
 WORKDIR /home/node/app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN yarn --frozen-lockfile--registry=http://registry.npmmirror.com
 
 COPY . .
 
