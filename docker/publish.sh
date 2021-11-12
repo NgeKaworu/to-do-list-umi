@@ -1,5 +1,7 @@
 #!/bin/bash
 set -e
 
-docker build -f ./Dockerfile -t ngekaworu/todo-list-umi ..;
-docker push ngekaworu/todo-list-umi;
+tag=ngekaworu/todo-list-umi
+
+docker build --file ./Dockerfile --tag ${tag} ..;
+docker push ${tag};
