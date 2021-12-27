@@ -1,26 +1,16 @@
 import { defineConfig } from 'umi';
-import base from './.umirc.default';
+import base from './src/js-sdk/configs/.umirc.default';
+import routes from './routes';
 
 export default defineConfig({
   ...base,
   title: '待办清单',
-  routes: [
-    {
-      path: '/',
-      component: '@/layouts/',
-      routes: [
-        { path: '/', redirect: '/task/' },
-        { path: '/task/', component: 'task' },
-        { path: '/history/', component: 'history' },
-        // { redirect: '/record/' },
-      ],
-    },
-  ],
+  routes,
   devServer: {
-    port: 80,
+    port: 8041,
     proxy: {
       '/api/todo-list': {
-        target: 'http://todo-list-go-dev',
+        target: 'http://localhost:8040',
         changeOrigin: true,
         pathRewrite: {
           '/api/todo-list': '',
