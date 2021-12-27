@@ -1,0 +1,50 @@
+.flex {
+  display: flex;
+  flex: 1 0 120px;
+  height: 100%;
+  overflow: auto;
+  column-gap: 8px;
+  scroll-snap-type: x mandatory;
+  .column {
+    flex-direction: column;
+    scroll-snap-align: end;
+  }
+
+  .row {
+    flex-direction: row;
+  }
+
+  :global {
+    .ant-checkbox-wrapper + .ant-checkbox-wrapper {
+      margin-left: 0;
+    }
+  }
+}
+
+.check-wrap {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+
+  .label {
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+
+  .active {
+    color: @primary-color;
+  }
+}
+
+.spin {
+  :global {
+    .ant-spin-container {
+      height: 100%;
+    }
+  }
+
+  width: 100%;
+}
