@@ -7,7 +7,6 @@ export default defineConfig({
   ...base,
   title: '待办清单',
   theme,
-  dynamicImport: { loading: '@/Loading' },
   routes,
   devServer: {
     port: 8041,
