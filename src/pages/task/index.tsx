@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useHistory } from 'react-router';
 import { useInfiniteQuery, useQueryClient, useMutation } from 'react-query';
 
@@ -19,8 +19,7 @@ import {
 
 const { Header, Content, Footer } = Layout;
 
-import { restful as RESTful } from '@/http';
-import { mainHost } from '@/http/host';
+import { restful as RESTful } from '@/js-sdk/utils/http';
 
 import RecordItem from '@/components/RecordItem';
 
@@ -44,11 +43,11 @@ export default () => {
   const _search = _location.search;
   const params = new URLSearchParams(_search);
 
-  const [sortVisable, setSortVisable] = useState(false);
-  const [inputVisable, setInputVisable] = useState(false);
+  const [sortVisible, setSortVisible] = useState(false);
+  const [inputVisible, setInputVisible] = useState(false);
 
   // 编辑modal使用
-  const [curRecrod, setCurRecord] = useState<MainTask>();
+  const [curRecord, setCurRecord] = useState<MainTask>();
 
   useEffect(() => {
     const params = new URLSearchParams(_search);
@@ -65,7 +64,7 @@ export default () => {
       );
 
       return RESTful.get(`todo-list/v1/task/list`, {
-        silence: 'success',
+        notify: 'fail',
         params: {
           ...params,
           skip: pageParam * limit,
@@ -80,38 +79,36 @@ export default () => {
     },
   );
 
-  const datas = data?.pages,
-    pages = datas?.reduce((acc, cur) => acc.concat(cur?.data), []),
-    total = datas?.[datas?.length - 1]?.total || 0;
-
+  const d = data?.pages,
+    pages = d?.reduce((acc, cur) => acc.concat(cur?.data), []);
   const creator = useMutation((data: Task) => RESTful.post(`todo-list/v1/task/create`, data));
 
   const updater = useMutation((data?: { [key: string]: any }) =>
     RESTful.patch(`todo-list/v1/task/update`, {
-      id: curRecrod?.id,
+      id: curRecord?.id,
       ...data,
     }),
   );
 
-  const deleter = useMutation((data?: string) => RESTful.delete(`todo-list/v1/task/${data}`));
+  const remover = useMutation((data?: string) => RESTful.delete(`todo-list/v1/task/${data}`));
 
   async function addTask(value: Task) {
     try {
       await creator.mutateAsync({ ...value, done: false });
       queryClient.invalidateQueries('tasks-list');
       inputForm.resetFields();
-      setInputVisable(false);
+      setInputVisible(false);
     } catch (e) {
       console.error(e);
     }
   }
 
   function showSortModal() {
-    setSortVisable(true);
+    setSortVisible(true);
   }
 
   function hideSortModal() {
-    setSortVisable(false);
+    setSortVisible(false);
   }
 
   function onSortSubmit() {
@@ -122,7 +119,7 @@ export default () => {
         pathname: _location.pathname,
         search: params.toString(),
       });
-      setSortVisable(false);
+      setSortVisible(false);
     });
   }
 
@@ -134,11 +131,11 @@ export default () => {
       search: params.toString(),
     });
     sortForm.resetFields();
-    setSortVisable(false);
+    setSortVisible(false);
   }
 
   function hideInputModal() {
-    setInputVisable(false);
+    setInputVisible(false);
     inputForm.resetFields();
   }
 
@@ -148,7 +145,7 @@ export default () => {
       await updater.mutateAsync(values);
       queryClient.invalidateQueries('tasks-list');
       inputForm.resetFields();
-      setInputVisable(false);
+      setInputVisible(false);
     } catch (e) {
       console.error(e);
     }
@@ -156,7 +153,7 @@ export default () => {
 
   async function removeHandler(id: string) {
     try {
-      await deleter.mutateAsync(id);
+      await remover.mutateAsync(id);
       queryClient.invalidateQueries('tasks-list');
     } catch (e) {
       console.error(e);
@@ -175,7 +172,7 @@ export default () => {
   function editHandler(record: MainTask) {
     inputForm.setFieldsValue(record);
     setCurRecord(record);
-    setInputVisable(true);
+    setInputVisible(true);
   }
 
   function multipleAdd(value: string) {
@@ -207,7 +204,7 @@ export default () => {
         >
           排序
         </Button> */}
-        <Modal visible={sortVisable} title="排序" onCancel={hideSortModal} onOk={onSortSubmit}>
+        <Modal visible={sortVisible} title="排序" onCancel={hideSortModal} onOk={onSortSubmit}>
           <Form onFinish={onSortSubmit} form={sortForm}>
             <FormItem name="sort" label="排序关键字" rules={[{ required: true }]}>
               <Radio.Group>
@@ -254,7 +251,11 @@ export default () => {
         <Form layout="inline" initialValues={{ level: 0 }} style={Flex1} onFinish={addTask}>
           <InputGroup compact style={{ ...Flex1, display: 'flex' }}>
             <FormItem name="level" rules={[{ required: true, message: '请选择优先级' }]}>
-              <Select placeholder="优先级" options={LEVEL_OPTIONS}></Select>
+              <Select
+                placeholder="优先级"
+                options={LEVEL_OPTIONS}
+                dropdownMatchSelectWidth={false}
+              />
             </FormItem>
             <FormItem
               name="title"
@@ -272,7 +273,7 @@ export default () => {
         </Form>
       </Footer>
 
-      <Modal title={'编辑'} visible={inputVisable} onCancel={hideInputModal} onOk={updateHandler}>
+      <Modal title={'编辑'} visible={inputVisible} onCancel={hideInputModal} onOk={updateHandler}>
         <Form
           form={inputForm}
           onFinish={updateHandler}

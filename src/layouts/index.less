@@ -1,25 +1,50 @@
+.layout {
+  height: 100%;
+  min-height: 100%;
+}
+
+.content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
 .footer-menu {
-  height: 60px;
-  border-top: 1px solid rgba(233, 233, 233, 05);
   display: flex;
   justify-content: space-around;
+  height: 60px;
   padding: 0;
   background: white;
+  border-top: 1px solid rgba(233, 233, 233, 05);
   box-shadow: 0px 1px 20px 5px rgba(0, 0, 0, 0.05);
 }
 
 .menu-item {
-  font-size: 12px;
-  flex: 1;
-  text-align: center;
+  :global {
+    .anticon {
+      font-size: 28px;
+    }
+  }
   display: flex;
+  flex: 1;
   flex-direction: column;
   justify-content: center;
+  color: #000;
+  font-size: 12px;
+  text-align: center;
   cursor: pointer;
+  opacity: 0.7;
   :hover {
+    color: @primary-color;
     opacity: 1;
   }
   :active {
     opacity: 0.5;
   }
+}
+
+.active {
+  color: @primary-color;
+  opacity: 1;
 }

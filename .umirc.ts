@@ -1,10 +1,13 @@
 import { defineConfig } from 'umi';
 import base from './src/js-sdk/configs/.umirc.default';
 import routes from './routes';
+import theme from './src/theme';
 
 export default defineConfig({
   ...base,
   title: '待办清单',
+  theme,
+  dynamicImport: { loading: '@/Loading' },
   routes,
   devServer: {
     port: 8041,
@@ -18,14 +21,6 @@ export default defineConfig({
       },
     },
   },
-  base: '/micro/todo-list',
+  base: '/todo-list',
   publicPath: '/micro/todo-list/',
-  extraBabelPlugins: [
-    [
-      'babel-plugin-styled-components',
-      {
-        namespace: 'todo-list',
-      },
-    ],
-  ],
 });
