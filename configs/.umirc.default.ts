@@ -8,6 +8,9 @@ export default defineConfig({
   nodeModulesTransform: {
     type: 'none',
   },
+  dynamicImport: {
+    loading: '@/Loading',
+  },
   helmet: false,
   dva: false,
   model: false,
